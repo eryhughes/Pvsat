@@ -1,0 +1,15 @@
+type,description,option,option1,option2,option3,option4,option5,option6,option7
+fO2,model to convert between fO2 and melt Fe3+/FeT,Kress91A,Kress91,Kress91A,ONeill18,buffered,S6ST,,
+carbonate,solubility constant for carbonate ion in the melt,Dixon95,Dixon95,Dixon97,Lesne11,Shiskina14,VES-9,ETN-1,PST-9
+water,solubility constant for H2O in the melt,evo,Dixon95,alkali basalt,VES-9,ETN-1,evo,,
+hydrogen,solubility constant for H2 in the melt,basalt,basalt,andesite,,,,,
+sulphide,model for sulphide capacity,ONeill20dil,ONeill20,ONeill20dil,ONeill20hyd,,,,
+sulphate,model for sulphate capacity,Hawaii,Nash19,S6ST,Hawaii,,,,
+ideal_gas,is the gas treated as an ideal gas,no,yes,no,,,,,
+carbonylsulphide,how is the equilibrium constant for the OCS reaction calculated,COS,COHS,COS,,,,,
+eq_Fe,does iron in the melt equilibrate with the gas,yes,yes,no,,,,,
+insolubles,"include insoluble species (CH4, H2, and CO) in Psat calculations?",yes,yes,no,,,,,
+y_CO2,CO2 fugacity coefficient,SS92,HP91,SS92,,,,,
+y_SO2,SO2 fugacity coefficient,SS92_modified,SS92,SS92_modified,,,,,
+y_H2S,H2S fugacity coefficient,SS92_modified,SS92,SS92_modified,,,,,
+H2S_m,H2S as dissolved melt species,yes,yes,no,,,,,

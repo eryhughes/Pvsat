@@ -25,6 +25,8 @@ def set_system(melt_wf,models):
         sys = "SCHOFe"
     return sys
 
+
+
 #################################################
 ### specitation of H and C at given P and fO2 ###
 #################################################
@@ -32,7 +34,7 @@ def set_system(melt_wf,models):
 def eq_C_melt(run,PT,melt_wf,species,setup,models): # equilibrium partitioning of C in the melt in CO system
     wt_C = melt_wf['CT'] # weight fraction
     K1 = mg.KCOg(PT) 
-    K2 = mg.C_CO3(run,PT,setup,species,models) # mole fraction
+    K2 = mg.C_CO3(run,PT,melt_wf,setup,species,models) # mole fraction
     K3 = (mg.C_CO(PT,models))/1000000. # weight fraction
     M_C = species.loc['C','M']
     M_CO = species.loc['CO','M']
@@ -168,6 +170,8 @@ def eq_HS_melt(run,PT,melt_wf,species,setup,models,nr_step,nr_tol): # not sure t
     M_H2S = species.loc['H2S','M']
     M_m_ = mg.M_m_SO(run,setup,species)
     
+    #constants = [wt_C, wt_H, K1_, K2_, K3_, K4_, K5_, K6_, K7_, K8_, M_C, M_H, M_CO, M_CO2, M_H2, M_H2O, M_CH4, M_m_, fO2]
+    
     def dx(x):
         f_ = f(x)
         result =(abs(0-f_))
@@ -221,7 +225,7 @@ def eq_CHS_melt(run,PT,melt_wf,species,setup,models,nr_step,nr_tol,guessx,guessy
     K8_ = mg.KHOg(PT)
     K9_ = mg.KCOg(PT)
     K10_ = mg.KCOHg(PT)
-    K11_ = mg.C_CO3(run,PT,setup,species,models) # mole fraction
+    K11_ = mg.C_CO3(run,PT,melt_wf,setup,species,models) # mole fraction
     K12_ = mg.C_CO(PT,models)/1000000. # weight fraction
     K13_ = mg.C_CH4(PT,models)/1000000. # weight fraction
    
@@ -367,6 +371,8 @@ def melt_speciation(run,PT,melt_wf,setup,species,models,nr_step,nr_tol):
                 guessx = mg.xm_CO2_so(run,melt_wf,setup,species)
                 guessy = mg.xm_H2OT_so(run,melt_wf,setup,species)
                 guessz = wt_S
+                #xm_CO2_,xm_H2O_, A, B = eq_CH_melt(run,PT,melt_wf,species,setup,models,nr_step,nr_tol,guessx,guessy)
+                #Xm_t, wm_H2O_, wm_CO2_, wm_H2_, wm_CO_, wm_CH4_ = A
                 xm_CO2_,xm_H2O_,wm_S2m_, A, B = eq_CHS_melt(run,PT,melt_wf,species,setup,models,nr_step,nr_tol,guessx,guessy,guessz)
                 Xm_t, wm_H2O_, wm_H2_, wm_CO2_, wm_CO_, wm_CH4_, wm_S2m_, wm_S6p_, wm_H2S_ = A
                 CO_CT = ((wm_CO_/M_CO)*M_C)/wt_C
@@ -418,11 +424,40 @@ def melt_speciation(run,PT,melt_wf,setup,species,models,nr_step,nr_tol):
         wm_CO_, wm_H2_, wm_CH4_, wm_H2S_, CO_CT, CH4_CT, H2_HT, CH4_HT, H2S_HT, H2S_ST = 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.
     return xm_H2O_, wm_H2O_, xm_CO2_, wm_CO2_, wm_H2_, wm_CO_, wm_CH4_, wm_H2S_, wm_S2m_, wm_S6p_, H2O_HT, H2_HT, CH4_HT, CO2_CT, CO_CT, CH4_CT, S6p_ST, S2m_ST, H2S_ST, H2S_HT
 
-  
     
 ##############
 ### solver ###
 ##############
+
+def test_f(x,y):
+    eq1 = x**2 + y**3 + 7*x*y
+    eq2 = x + 2*y**2 + 3*x*y
+    return eq1, eq2,0,0,0
+
+def test_df(x,y):
+    eq1_x = 2*x + 7*y
+    eq1_y = 3*y**2 + 7*x
+    eq2_x = 1 + 3*y
+    eq2_y = 4*y + 3*x
+    return eq1_x, eq1_y, eq2_x, eq2_y
+
+def test3_f(x,y,z):
+    eq1 = x**2 + y**3 + 7*x*y + x*z
+    eq2 = x + 2*y**2 + 3*x*y + x*z**3
+    eq3 = x + y + z + 3*z**2
+    return eq1, eq2, eq3,0,0,0,0
+
+def test3_df(x,y,z):
+    eq1_x = 2*x + 7*y + z
+    eq1_y = 3*y**2 + 7*x
+    eq1_z = x
+    eq2_x = 1 + 3*y + z**3
+    eq2_y = 4*y + 3*x
+    eq2_z = 3*x*z**2
+    eq3_x = 1
+    eq3_y = 1
+    eq3_z = 1 + 3*z
+    return eq1_x, eq1_y, eq1_z, eq2_x, eq2_y, eq2_z, eq3_x, eq3_y, eq3_z
 
 def newton_raphson(x0,constants,e1,step,eqs,deriv):
     # create results table
@@ -456,6 +491,8 @@ def newton_raphson(x0,constants,e1,step,eqs,deriv):
         results.to_csv('results_newtraph.csv', index=False, header=False)     
     return x0        
 
+#jac_newton(1,1,test_f,test_df,1)
+
 def jac_newton(x0,y0,constants,eqs,deriv,step,tol,maxiter=1000):
 
     # create results table
@@ -476,7 +513,9 @@ def jac_newton(x0,y0,constants,eqs,deriv,step,tol,maxiter=1000):
         J = np.array([[eq1_x, eq1_y],[eq2_x, eq2_y]])
         det = J[0][0]*J[1][1] - J[0][1]*J[1][0]
         inv_J = (1/det)*np.array(([J[-1][-1],-(J[0][-1])],[-(J[-1][0]),J[0][0]]), dtype=object)
+        #inv_J = np.linalg.inv(J)
         new_guess = np.array([guessx, guessy], dtype=object) - step*np.dot(inv_J, Func)
+        #new_guess = np.array([guessx,guessy]) - step*np.dot(inv_J,Func)
         return new_guess[0], new_guess[-1], J
     
     for iter in range(maxiter):
@@ -485,6 +524,9 @@ def jac_newton(x0,y0,constants,eqs,deriv,step,tol,maxiter=1000):
         while guessx < 0.0 or guessy < 0.0:
             step = step/10.
             guessx, guessy, J = x2jac(step,deriv_,eqs,x0,y0)
+        #print(guessx,guessy)
+        #print(guessx,guessy,diff1,diff2,wtg1,wtg2,wtg3)
+        #if (abs(x0 - guessx)/x0)*100 < tol and (abs(y0-guessy)/y0)*100 < tol: tol = 1e-5
         diff1, diff2, wtg1,wtg2,wtg3 = eqs(guessx,guessy)
         if abs(diff1) < tol and abs(diff2) < tol:
             return guessx, guessy
@@ -520,9 +562,14 @@ def jac_newton3(x0,y0,z0,constants,eqs,deriv,step,tol,maxiter=1000):
                         [m6*m7-m4*m9, m1*m9-m3*m7, m3*m4-m1*m6],
                         [m4*m8-m5*m7, m2*m7-m1*m8, m1*m5-m2*m4]])/determinant
         dot = np.dot(inv_jac, Func)  # To get the arrays as 2 3x1 columns
+        #inv_J = np.linalg.inv(J)
         new_guess = np.array([guessx, guessy, guessz]) - step*dot  # Returns a 3x1 array of guessx, guessy, guessz
+        #new_guess = np.array([guessx,guessy]) - step*np.dot(inv_J,Func)
         return new_guess[0], new_guess[1], new_guess[2], J  # guessx, guessy, guessz, Jacobian
-
+    
+    x00, y00, z00 = x0, y0, z0
+    step0 = step
+        
     for iter in range(maxiter):
         deriv_ = deriv(x0,y0,z0,constants)
         guessx, guessy, guessz, J = x3jac(step,deriv_,eqs,x0,y0,z0,constants)
@@ -539,4 +586,24 @@ def jac_newton3(x0,y0,z0,constants,eqs,deriv,step,tol,maxiter=1000):
         z0 = guessz
         results1 = pd.DataFrame([[guessx, guessy,guessz,diff1,diff2,diff3,step]])
         results = results.append(results1, ignore_index=True)
-        results.to_csv('results_jacnewton3.csv', index=False, header=False)  
+        results.to_csv('results_jacnewton3.csv', index=False, header=False)
+    
+    step = step0/10.
+    x0, y0, z0 = x00, y00, z00
+    for iter in range(maxiter):
+        deriv_ = deriv(x0,y0,z0,constants)
+        guessx, guessy, guessz, J = x3jac(step,deriv_,eqs,x0,y0,z0,constants)
+        while guessx < 0.0 or guessy < 0.0 or guessz < 0.0:
+            step = step/10.
+            guessx, guessy, guessz, J = x3jac(step,deriv_,eqs,x0,y0,z0,constants)
+        diff1, diff2, diff3, wtg1,wtg2,wtg3,wtg4 = eqs(guessx,guessy,guessz)
+        if abs(diff1) < tol and abs(diff2) < tol and abs(diff3) < tol:
+            return guessx, guessy, guessz
+        elif np.isnan(float(guessx)) or np.isnan(float(guessy)) or np.isnan(float(guessz)):
+            print("nan encountered")
+        x0 = guessx
+        y0 = guessy
+        z0 = guessz
+        results1 = pd.DataFrame([[guessx, guessy,guessz,diff1,diff2,diff3,step]])
+        results = results.append(results1, ignore_index=True)
+        results.to_csv('results_jacnewton3.csv', index=False, header=False)    
